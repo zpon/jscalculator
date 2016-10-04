@@ -39,6 +39,8 @@ define(['lexer'], function (Lexer) {
         }
     };
 
+
+
     class Parser {
 
         constructor(lexer) {
@@ -57,6 +59,22 @@ define(['lexer'], function (Lexer) {
                     break;
                 }
                 token = lexer.token();
+            }
+        }
+
+        precedence(operator) {
+            if (!(operator instanceof Lexer.Tokens.BinaryOperator)) {
+                throw "Only BinaryOperator's has a defined precedence: " + operator.constructor.name;
+            }
+
+            // precedence from http://en.cppreference.com/w/cpp/language/operator_precedence
+
+            if (operator instanceof Lexer.Tokens.Plus || operator instanceof Lexer.Tokens.Minus) {
+                return 6;
+            } else if (operator instanceof Lexer.Tokens.Times || operator instanceof Lexer.Tokens.Divisor) {
+                return 5;
+            } else {
+                throw "Unknown operator: " + operator.constructor.name;
             }
         }
 
@@ -94,11 +112,16 @@ define(['lexer'], function (Lexer) {
                     //					token = this.tokenList[this.pos];
 
                 } else if (token instanceof Lexer.Tokens.BinaryOperator) {
-                    if (binaryOperators.length > 0) {
+                    while (binaryOperators.length > 0 && this.precedence(binaryOperators[binaryOperators.length - 1]) <= this.precedence(token)) {
+                        let operator = binaryOperators.pop();
                         var e2 = expressions.pop();
                         var e1 = expressions.pop();
-                        expressions.push(new BinaryExpression(binaryOperators.pop(), e1, e2));
+                        expressions.push(new BinaryExpression(operator, e1, e2));
                     }
+                    //                    if (binaryOperators.length > 0) {//                        var e2 = expressions.pop();
+                    //                        var e1 = expressions.pop();
+                    //                        expressions.push(new BinaryExpression(binaryOperators.pop(), e1, e2));
+                    //                    }
                     binaryOperators.push(token);
                     this.pos++;
                 } else if (token instanceof Lexer.Tokens.EndOfInput) {
@@ -108,19 +131,49 @@ define(['lexer'], function (Lexer) {
             }
 
             if (binaryOperators.length > 0) {
-                console.assert(binaryOperators.length === 1, "binaryOperators must at most be 1");
-                console.assert(expressions.length == 2);
-                var e2 = expressions.pop();
-                var e1 = expressions.pop();
-                return new BinaryExpression(binaryOperators.pop(), e1, e2);
+                while (binaryOperators.length > 0) {
+                    var e2 = expressions.pop();
+                    var e1 = expressions.pop();
+                    expressions.push(new BinaryExpression(binaryOperators.pop(), e1, e2));
+                }
+                console.assert(binaryOperators.length === 0, "binaryOperators must at most be 1, was: " + binaryOperators.length);
+                //                console.assert(expressions.length <= 1);
+                //                var e2 = expressions.pop();//                var e1 = expressions.pop();
+                //                return new BinaryExpression(binaryOperators.pop(), e1, e2);
                 //				expressionList.push();
-            } else {
-                //				expressionList.push();
-                console.assert(expressions.length === 1, "expression should be empty on end of input, was: " + JSON.stringify(expressions));
-                return expressions.pop();
             }
+            console.assert(expressions.length === 1, "Exactly one expression should be available: " + expressions.length);
+            return expressions.pop();
+            //            else {
+            //                //				expressionList.push();
+            //                console.assert(expressions.length === 1, "expression should be empty on end of input, was: " + JSON.stringify(expressions));
+            //                return expressions.pop();
+            //            }
 
             return new Expression(expressionList);
+        }
+
+        astToString(element) {
+            if (element instanceof Expression) {
+                for (var i = 0; i < element.expressionList.length; i++) {
+                    this.astToString(element.expressionList[i]);
+                }
+            } else if (element instanceof BinaryExpression) {
+                var out = "(";
+                out += this.astToString(element.expression1);
+                out += element.binaryOperator.value;
+                out += this.astToString(element.expression2);
+                out += ")";
+                return out;
+            } else if (element instanceof UnaryExpression) {
+                var  out = element.unaryOperator.value;
+                out += "(";
+                out += this.astToString(element.expression);
+                out += ")";
+                return out;
+            } else if (element instanceof Number) {
+                return element.token.value;
+            }
         }
     }
 

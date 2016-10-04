@@ -10,15 +10,15 @@ define(function () {
             super(value);
             this.typeIndicator = typeIndicator;
         }
-        
+
         getDecimalValue() {
-        	if (this.typeIndicator === "b") {
-        		return parseInt(this.value.substr(2), 2);
-        	} else if (this.typeIndicator === "d") {
-        		return parseInt(this.value.substr(2), 10);
-        	} else {
-        		return parseInt(this.value, 10);
-        	}
+            if (this.typeIndicator === "b") {
+                return parseInt(this.value.substr(2), 2);
+            } else if (this.typeIndicator === "d") {
+                return parseInt(this.value.substr(2), 10);
+            } else {
+                return parseInt(this.value, 10);
+            }
         }
     };
     class EndOfInput extends Token {}
@@ -29,17 +29,27 @@ define(function () {
         constructor(char) {
             super(char);
         }
-    } // ~
+    } // '~'
     class Plus extends BinaryOperator {
-    	constructor(char) {
-    		super(char);
-    	}
-    } // +
+        constructor(char) {
+            super(char);
+        }
+    } // '+'
     class Minus extends BinaryOperator {
-    	constructor(char) {
-    		super(char);
-    	}
-    } // -
+        constructor(char) {
+            super(char);
+        }
+    } // '-'
+    class Times extends BinaryOperator {
+        constructor(char) {
+            super(char);
+        }
+    } // '*'
+    class Divisor extends BinaryOperator {
+        constructor(char) {
+            super(char);
+        }
+    } // '/'
 
     class Lexer {
 
@@ -52,47 +62,47 @@ define(function () {
             return this.input.charAt(this.pos);
         }
         getNextChar() {
-        	return this.input.charAt(this.pos + 1);
+            return this.input.charAt(this.pos + 1);
         }
 
         token() {
             var char = this.getCurrentChar(); // getCurrentChar after end of input will return ""
 
             while (this.isWhiteSpace(char)) {
-            	this.pos++;
-            	char = this.getCurrentChar();
-            }
-            
-            if (this.pos == this.input.length) {
-                return new EndOfInput();
+                this.pos++;
+                char = this.getCurrentChar();
             }
 
-            else if (this.isDigit(char)) {
+            if (this.pos == this.input.length) {
+                return new EndOfInput();
+            } else if (this.isDigit(char)) {
                 return this.parseNumber();
-            }
-            else if (char === "~") {
+            } else if (char === "~") {
                 this.pos++;
                 return new Tilde(char);
-            }
-            else if (char === "+") {
-            	this.pos++;
-            	return new Plus(char);
-            }
-            else if (char === "-") {
-            	this.pos++;
-            	return new Minus(char);
-            }
-            else {
-            	throw "Unable to parse input char: \"" + char + "\" at position: " + this.pos;
+            } else if (char === "+") {
+                this.pos++;
+                return new Plus(char);
+            } else if (char === "-") {
+                this.pos++;
+                return new Minus(char);
+            } else if (char === "*") {
+                this.pos++;
+                return new Times(char);
+            } else if (char === "/") {
+                this.pos++;
+                return new Divisor(char);
+            } else {
+                throw "Unable to parse input char: \"" + char + "\" at position: " + this.pos;
             }
         }
 
         isDigit(char) {
             return !isNaN(parseInt(char));
         }
-        
+
         isWhiteSpace(char) {
-        	return char === " " || char === "\t";
+            return char === " " || char === "\t";
         }
 
         parseNumber() {
@@ -100,33 +110,31 @@ define(function () {
             var num = "";
             var likelyBinary = true;
             var typeIndicator = "";
-            if (char == "0") {            		
-        		if (this.getNextChar() === "x") {
-        			// hex
-        			// TODO
-        		}
-        		else if (this.getNextChar() === "b") {
-        			// binary
-        			typeIndicator = "b";
-        		}
-        		else if (this.getNextChar() === "d") {
-        			// decimal
-        			typeIndicator = "d";
-        		}
-        	}
-            
-            while (this.pos < this.input.length && (this.isDigit(char) || 
-            		(typeIndicator === "b" && char === "b") || (typeIndicator === "d" && char === "d"))) {
+            if (char == "0") {
+                if (this.getNextChar() === "x") {
+                    // hex
+                    // TODO
+                } else if (this.getNextChar() === "b") {
+                    // binary
+                    typeIndicator = "b";
+                } else if (this.getNextChar() === "d") {
+                    // decimal
+                    typeIndicator = "d";
+                }
+            }
+
+            while (this.pos < this.input.length && (this.isDigit(char) ||
+                    (typeIndicator === "b" && char === "b") || (typeIndicator === "d" && char === "d"))) {
                 num += char;
                 if (typeIndicator == "b") {
-                	if (char !== "0" && char !== "1" && char != "b") {
-                		throw "Number started with 0b but was contained number other than 0 and 1: " + char;
-                	}                	
+                    if (char !== "0" && char !== "1" && char != "b") {
+                        throw "Number started with 0b but was contained number other than 0 and 1: " + char;
+                    }
                 }
                 if (typeIndicator == "d") {
-                	if (char !== "d" && char < 0 && char > 9) {
-                		throw "Number started with 0d but was contained number other than 0-9 and d: " + char;
-                	}                	
+                    if (char !== "d" && char < 0 && char > 9) {
+                        throw "Number started with 0d but was contained number other than 0-9 and d: " + char;
+                    }
                 }
                 this.pos++;
                 char = this.getCurrentChar();
@@ -145,7 +153,9 @@ define(function () {
             BinaryOperator: BinaryOperator,
             Tilde: Tilde,
             Plus: Plus,
-            Minus: Minus
+            Minus: Minus,
+            Times: Times,
+            Divisor: Divisor
         }
     };
 });

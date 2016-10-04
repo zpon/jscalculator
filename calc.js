@@ -19,8 +19,12 @@ define(['lexer', 'parser'], function (Lexer, Parser) {
                 return new Result(r1.input + ast.binaryOperator.value + r2.input, r1.representation + " - " + r2.representation, r1.resultValue + r2.resultValue)
             } else if (ast.binaryOperator.value === "-") {
                 return new Result(r1.input + ast.binaryOperator.value + r2.input, r1.representation + " - " + r2.representation, r1.resultValue - r2.resultValue);
+            } else if (ast.binaryOperator.value === "*") {
+                return new Result(r1.input + ast.binaryOperator.value + r2.input, r1.representation + " * " + r2.representation, r1.resultValue * r2.resultValue);
+            } else if (ast.binaryOperator.value === "/") {
+                return new Result(r1.input + ast.binaryOperator.value + r2.input, r1.representation + " / " + r2.representation, r1.resultValue / r2.resultValue);
             } else {
-                throw "Unknown operator";
+                throw "Unknown operator: " + ast.binaryOperator.value;
             }
         } else if (ast instanceof Parser.Exps.UnaryExpression) {
             let r = calc(ast.expression);

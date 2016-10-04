@@ -54,8 +54,11 @@ requirejs(['jquery', 'lexer', 'calc', 'parser'], function ($, Lexer, Calc, Parse
 
             let lexer = new Lexer.Lexer(value);
             let parser = new Parser.Parser(lexer);
+            let ast = parser.parse();
 
-            var result = Calc.calculate(parser.parse());
+            console.log(value + " => " + parser.astToString(ast));
+
+            var result = Calc.calculate(ast);
 
             $("#calc_history").prepend("<div>" + result.representation + " = " + result.resultValue + " = " + createBinaryString(result.resultValue) + "</div>");
 
